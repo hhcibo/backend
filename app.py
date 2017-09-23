@@ -18,7 +18,6 @@ table = dynamodb.Table('HVVData')
 @app.route('/ausstieg', methods=['GET', 'POST'])
 def fahrten():
     fahrt = table.scan()['Count'] - 1
-    uuid = "uuid"
     time = 100
     line = "U1"
     response = table.get_item(
@@ -26,6 +25,7 @@ def fahrten():
             'Fahrt': fahrt
         }
     )
+    uuid = response['Item']['startTime']
     endTime = str(datetime.datetime.now() - datetime.datetime(response['Item']['startTime']))
     startTime = response['Item']['startTime']
     fromStation = get_from_Station(time)
@@ -127,18 +127,6 @@ def get_from_Station(time):
     else:
         fromStation = "U Schlump"
     return fromStation
-
-
-def get_route(uuid, time):
-    uuid = "sample_UUID"
-    time = 200
-    table.put_item(
-        Item={
-            'UUID': uuid,
-            'Time': time
-        }
-    )
-    return
 
 
 def calculate_prize(time):

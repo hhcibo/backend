@@ -15,30 +15,19 @@ dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
 table = dynamodb.Table('HVVData')
 
 
-@app.route('/status', methods=['GET', 'POST'])
-def status():
-    item = "-"
-    table.put_item(
-        Item={
-            '-': item
-        }
-    )
-    response = table.get_item(
-        Key={
-            '-': item,
-        }
-    )
-    return response
-
-
-@app.route("/mobile", methods=['GET'])
-def get_resp():
-    fahrt = table.scan()['Count']
+@app.route('/ausstieg', methods=['GET', 'POST'])
+def fahrten():
+    fahrt = table.scan()['Count'] - 1
     uuid = "uuid"
     time = 100
     line = "U1"
-    endTime = str(datetime.datetime.now())
-    startTime = str(datetime.datetime.now() - datetime.timedelta(hours=0, minutes=0, seconds=time))
+    response = table.get_item(
+        Key={
+            'Fahrt': fahrt
+        }
+    )
+    endTime = str(datetime.datetime.now() - datetime.datetime(response['Item']['startTime']))
+    startTime = response['Item']['startTime']
     fromStation = get_from_Station(time)
     endStation = get_end_Station(time)
     cost = calculate_prize(time)
@@ -55,14 +44,40 @@ def get_resp():
             'color': color
         }
     )
-    #print(response['Item']['Fahrt'])
-    #print(response['Item']['UUID'])
-    #print(int(re.findall("\d+", str(response['Item']['Fahrt']))[0]))
-    #print(table.scan()['Count'])
-    #print(table.scan())
     data = json.dumps(build_return_json(), indent=4)
     print(data)
-    #prize = calculate_prize(uuid)
+    return data, 200, {'Content-Type': 'application/json; charset=utf-8'}
+
+
+@app.route("/einstieg", methods=['POST'])
+def get_resp():
+    incoming_data = request.get_json()
+    incoming_data.get("station")
+    fahrt = table.scan()['Count']
+    uuid = incoming_data.get("uuid")
+    time = 100
+    line = "U1"
+    endTime = str(0)
+    startTime = str(datetime.datetime.now())
+    fromStation = incoming_data.get("station")
+    print(uuid + fromStation)
+    endStation = None
+    cost = calculate_prize(time)
+    color = get_color(line)
+    table.put_item(
+        Item={
+            'Fahrt': fahrt,
+            'UUID': uuid,
+            'startTime': startTime,
+            'endTime': endTime,
+            'fromStation': fromStation,
+            'endStation': endStation,
+            'cost': cost,
+            'color': color
+        }
+    )
+    data = json.dumps(build_return_json(), indent=4)
+    print(data)
     return data, 200, {'Content-Type': 'application/json; charset=utf-8'}
 
 
@@ -78,11 +93,13 @@ def get_end_Station(time):
 
 def get_color(line):
     if line == "U1":
-        color = "blue"
+        color = "#006ab3"
     elif line == "U2":
-        color = "yellow"
+        color = "#e1211a"
+    elif line == "U3":
+        color = "#fd0"
     else:
-        color = "red"
+        color = "#0098a1"
     return color
 
 

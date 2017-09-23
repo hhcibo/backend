@@ -55,14 +55,14 @@ def get_resp():
     incoming_data.get("station")
     fahrt = table.scan()['Count']
     uuid = incoming_data.get("uuid")
-    time = 100
     line = "U1"
     endTime = str(0)
     startTime = str(datetime.datetime.now())
     fromStation = incoming_data.get("station")
+    line = incoming_data.get("station").split()[0]
     print(uuid + fromStation)
     endStation = None
-    cost = calculate_prize(time)
+    cost = None
     color = get_color(line)
     table.put_item(
         Item={
@@ -73,7 +73,8 @@ def get_resp():
             'fromStation': fromStation,
             'endStation': endStation,
             'cost': cost,
-            'color': color
+            'color': color,
+            'linie': line
         }
     )
     data = json.dumps(build_return_json(), indent=4)
